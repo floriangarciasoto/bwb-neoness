@@ -1,0 +1,91 @@
+/* -- Bootstrap missing -- */
+
+/* Oui je sais Bootstrap ne veut plus l'utiliser mais moi je préfère. */
+.text-justify {
+    text-align: justify;
+}
+
+/* -- Header -- */
+
+header {
+    background-color: blue;
+}
+
+/* -- Main -- */
+
+main {
+    min-height: 35em;
+}
+
+/* -- Gradient backgrounds -- */
+
+.gradient-red {
+    background: linear-gradient(120deg, red, black);
+}
+
+.gradient-blue {
+    background: linear-gradient(120deg, blue, black);
+}
+
+.gradient-green {
+    background: linear-gradient(120deg, green, black);
+}
+
+.gradient-yellow {
+    background: linear-gradient(120deg, yellow, black);
+}
+
+.gradient-orange {
+    background: linear-gradient(120deg, orange, black);
+}
+
+/* ---- Front page ---- */
+
+.site-title-dv {
+    background: linear-gradient(120deg, grey, black);
+}
+.site-title-dv > * {
+    width: 50%;
+}
+
+.section-articles a {
+    width: 20em;
+    height: 28.5em;
+}
+
+.section-articles article img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+}
+
+.section-articles h3 {
+    height: 3em;
+}
+
+.section-articles date {
+    color: lightgray;
+}
+
+/* ---- Description ---- */
+
+.item-description {
+    height: 47.5em;
+}
+
+.item-description article {
+    height: 30em;
+    width: 75em;
+}
+
+.item-description article img {
+    height: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+}
+
+/* -- Footer -- */
+
+footer {
+    background-color: darkblue;
+}
