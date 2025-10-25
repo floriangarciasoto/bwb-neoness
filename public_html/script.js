@@ -23,19 +23,87 @@ async function chargerNetflopTMDB() {
     console.log("Chargement de l'API TMDB ...");
     
     try {
-        // Charger les 4 catégories en parallèle avec Promise.all()
+        // Charger les catégories en parallèle avec Promise.all()
+        let categories = [
+            {
+                // Titre h2 de la section
+                title: "Films populaires",
+                // 'movie' = type de contenu
+                type: "movie",
+                // movie/popular = endpoint pour les films populaires
+                // language=fr-FR = obtenir les résultats en français
+                // page=1 = première page de résultats
+                query: `movie/popular` + `?language=fr-FR` + `&page=1`,
+                // ID du noeud de la balise section dans laquelle sera affichée notre catégorie
+                nodeID: "films-populaires",
+                // Couleur du background de la section
+                color: "red"
+            },
+            {
+                // Titre h2 de la section
+                title: "Séries populaires",
+                // 'tv' = type de contenu (série TV)
+                type: "tv",
+                // tv/popular = endpoint pour les séries TV populaires
+                // language=fr-FR = obtenir les résultats en français
+                // page=1 = première page de résultats
+                query: `tv/popular` + `?language=fr-FR` + `&page=1`,
+                // ID du noeud de la balise section dans laquelle sera affichée notre catégorie
+                nodeID: "series-populaires",
+                // Couleur du background de la section
+                color: "blue"
+            },
+            {
+                // Titre h2 de la section
+                title: "Documentaires",
+                // 'movie' car les documentaires sont considérés comme des films
+                type: "movie",
+                // discover/movie = endpoint pour découvrir des films avec filtres
+                // with_genres=99 = ID 99 correspond au genre "Documentaire"
+                // sort_by=popularity.desc = trier par popularité décroissante
+                query: `discover/movie` + `?with_genres=99` + `&page=1` + `&sort_by=popularity.desc`,
+                // ID du noeud de la balise section dans laquelle sera affichée notre catégorie
+                nodeID: "documentaires",
+                // Couleur du background de la section
+                color: "green"
+            },
+            {
+                // Titre h2 de la section
+                title: "Animes",
+                // 'tv' car les animes sont des séries TV
+                type: "tv",
+                // discover/tv = endpoint pour découvrir des séries avec filtres
+                // with_genres=16 = ID 16 correspond au genre "Animation"
+                // with_origin_country=JP = filtrer par pays d'origine = Japon
+                // sort_by=popularity.desc = trier par popularité décroissante
+                query: `discover/tv` + `?with_genres=16` + `&with_origin_country=JP` + `&page=1` + `&sort_by=popularity.desc`,
+                // ID du noeud de la balise section dans laquelle sera affichée notre catégorie
+                nodeID: "animes",
+                // Couleur du background de la section
+                color: "yellow"
+            }
+        ];
+
         // await = attendre que toutes les promesses soient terminées
         // Promise.all() = exécuter plusieurs requêtes en même temps (plus rapide)
-        await Promise.all([
-            afficherFilmsPopulaires(),
-            afficherSeriesPopulaires(),
-            afficherDocumentaires(),
-            afficherAnimes()
-        ]).then(() => {
+        await Promise.all(
+            // Mapping des catégories
+            // La méthode .map() permet de transformer chaque objet du tableau categories
+            // en appel de la fonction afficherCategorie() en lui passant en argument
+            // toutes ses propriétés dans le bon ordre
+            categories.map(category =>
+                afficherCategorie(
+                    category.title,
+                    category.type,
+                    category.query,
+                    category.nodeID,
+                    category.color
+                )
+            )
+        ).then(() => {
             // Message de succès quand tout est chargé
-            console.log("Tout est chargé");
+            console.log("Tout est chargé.");
         })
-
     } catch (error) {
         // Si une erreur se produit, l'afficher dans la console
         console.error("Echec du chargement de Netflop TMDB :",error);
@@ -45,238 +113,89 @@ async function chargerNetflopTMDB() {
 }
 
 /**
- * Fonction pour afficher les films populaires dans un slider
+ * Fonction pour afficher le contenu d'une catégorie dans un slider
  * Fonction asynchrone car elle fait une requête à l'API
+ * @param {*} title - titre h2 de la section
+ * @param {*} type - type de contenu
+ * @param {*} query - partie finale de l'URL pour l'API contenant l'endpoint et les paramètres de la requête
+ * @param {*} nodeID - id du noeud de la balise section dans laquelle sera affichée notre catégorie
+ * @param {*} color - couleur du background de la section
  */
-async function afficherFilmsPopulaires() {
-    // Construire l'URL de la requête API avec les paramètres
-    // movie/popular = endpoint pour les films populaires
-    // api_key = notre clé d'authentification
-    // language=fr-FR = obtenir les résultats en français
-    // page=1 = première page de résultats
-    const URL = BASE_URL
-        + `movie/popular`
-        + `?api_key=${API_KEY}`
-        + `&page=1`
-        + `&language=fr-FR`;
-    
-    // ============================================
-    // FETCH : ÉTAPE 1 - Lancer la requête HTTP
-    // ============================================
-    // fetch(url) envoie une requête HTTP GET à l'API TMDB
-    // C'est une opération ASYNCHRONE (ne bloque pas le reste du code)
-    // await = PAUSE : attendre que le serveur réponde avant de continuer
-    // Résultat stocké dans 'response' = objet Response avec infos HTTP
-    let response = await fetch(URL);
-    
-    // ============================================
-    // FETCH : ÉTAPE 2 - Vérifier le code HTTP
-    // ============================================
-    // response.ok vérifie si le code HTTP est 2xx (succès)
-    // Exemples : 200 = OK, 404 = Not Found, 500 = Server Error
-    // Si erreur (404, 500...), on lance une exception
-    if (!response.ok) {
-        console.error("Echec du chargement des films populaires.");
-        return;
+async function afficherCategorie(title,type,query,nodeID,color) {
+    try {
+        // Construire l'URL de la requête API avec les paramètres
+        // api_key = notre clé d'authentification
+        const URL = BASE_URL + query + `&api_key=${API_KEY}`;
+        console.log("Fetching:",URL);
+        
+        // ============================================
+        // FETCH : ÉTAPE 1 - Lancer la requête HTTP
+        // ============================================
+        // fetch(url) envoie une requête HTTP GET à l'API TMDB
+        // C'est une opération ASYNCHRONE (ne bloque pas le reste du code)
+        // await = PAUSE : attendre que le serveur réponde avant de continuer
+        // Résultat stocké dans 'response' = objet Response avec infos HTTP
+        let response = await fetch(URL);
+        
+        // ============================================
+        // FETCH : ÉTAPE 2 - Vérifier le code HTTP
+        // ============================================
+        // response.ok vérifie si le code HTTP est 2xx (succès)
+        // Exemples : 200 = OK, 404 = Not Found, 500 = Server Error
+        // Si erreur (404, 500...), on lance une exception
+        if (!response.ok) {
+            console.error("Impossible de récuperer les informations de la catégorie :",title);
+            return;
+        }
+        
+        // ============================================
+        // FETCH : ÉTAPE 3 - Convertir JSON → JavaScript
+        // ============================================
+        // Le serveur envoie les données au format JSON (texte)
+        // response.json() les convertit en objet JavaScript utilisable
+        // C'est aussi asynchrone, donc on utilise await
+        // Résultat : 'data' contient un objet avec { results: [...films] }
+        let data = await response.json();
+        
+        // Récupérer le conteneur HTML où afficher les films
+        let container = document.getElementById(nodeID);
+            container.className = `gradient-${color} p-3`;
+        
+        // Vider le conteneur (supprimer le loader animé)
+        container.innerHTML = "";
+        
+        // Créer un élément h2 pour le titre de la section
+        // Définir le texte du titre
+        // Ajouter le titre au conteneur
+        let h2 = document.createElement("h2");
+            h2.textContent = title;
+            h2.className = "h2 text-center mt-3 mb-4";
+        container.appendChild(h2);
+        
+        // Créer la structure du slider avec les 15 premiers films
+        // data.results = tableau de films reçu de l'API
+        // slice(0, 15) = prendre seulement les 15 premiers
+        let items = data.results.slice(0, 15);
+        let slider = creerSlider(items, type);
+        
+        // Ajouter le slider au conteneur
+        container.appendChild(slider);
+
+    }
+    catch(error) {
+        // ============================================
+        // GESTION DES ERREURS avec catch
+        // ============================================
+        // Si une erreur se produit dans le bloc try :
+        // - Erreur réseau (pas de connexion internet)
+        // - Erreur HTTP (404, 500...)
+        // - Erreur de parsing JSON
+        // Le code "saute" directement ici dans le catch
+        // On affiche l'erreur dans la console pour déboguer
+        console.error("Erreur lors du chargement de la catégorie :",title);
+        console.error(error);
     }
     
-    // ============================================
-    // FETCH : ÉTAPE 3 - Convertir JSON → JavaScript
-    // ============================================
-    // Le serveur envoie les données au format JSON (texte)
-    // response.json() les convertit en objet JavaScript utilisable
-    // C'est aussi asynchrone, donc on utilise await
-    // Résultat : 'data' contient un objet avec { results: [...films] }
-    let data = await response.json();
-    
-    // Récupérer le conteneur HTML où afficher les films
-    let container = document.getElementById("films-populaires");
-        container.className = "gradient-red p-3";
-    
-    // Vider le conteneur (supprimer le loader animé)
-    container.innerHTML = "";
-    
-    // Créer un élément h2 pour le titre de la section
-    // Définir le texte du titre
-    // Ajouter le titre au conteneur
-    let h2 = document.createElement("h2");
-        h2.textContent = "Films populaires";
-        h2.className = "h2 text-center mt-3 mb-4";
-    container.appendChild(h2);
-    
-    // Créer la structure du slider avec les 15 premiers films
-    // data.results = tableau de films reçu de l'API
-    // slice(0, 15) = prendre seulement les 15 premiers
-    // 'movie' = type de contenu
-    let items = data.results.slice(0, 15);
-    
-    // Ajouter le slider au conteneur
-    container.appendChild(creerSlider(items, "movie"));
-    
-    // ============================================
-    // GESTION DES ERREURS avec catch
-    // ============================================
-    // Si une erreur se produit dans le bloc try :
-    // - Erreur réseau (pas de connexion internet)
-    // - Erreur HTTP (404, 500...)
-    // - Erreur de parsing JSON
-    // Le code "saute" directement ici dans le catch
-    // On affiche l'erreur dans la console pour déboguer
-}
-
-/**
- * Fonction pour afficher les séries TV populaires dans un slider
- * Fonctionne de la même manière que afficherFilmsPopulaires()
- */
-async function afficherSeriesPopulaires() {
-    // Construire l'URL pour récupérer les séries populaires
-    // tv/popular = endpoint pour les séries TV populaires
-    const URL = BASE_URL
-        + `tv/popular`
-        + `?api_key=${API_KEY}`
-        + `&page=1`;
-        + `&language=fr-FR`;
-    
-    // Faire la requête fetch et attendre la réponse
-    let response = await fetch(URL);
-    
-    // Vérifier si la requête a réussi
-    if (!response.ok) {
-        console.error("Echec du chargement des séries populaires.");
-        return;
-    }
-    
-    // Convertir la réponse JSON en objet JavaScript
-    let data = await response.json();
-    
-    // Récupérer le conteneur HTML pour les séries
-    let container = document.getElementById("series-populaires");
-        container.className = "gradient-blue p-3";
-    
-    // Vider le conteneur (supprimer le loader)
-    container.innerHTML = "";
-    
-    // Créer le titre de la section
-    // Ajouter le titre au conteneur
-    let h2 = document.createElement("h2");
-        h2.textContent = "Séries populaires";
-        h2.className = "h2 text-center mt-3 mb-4";
-    container.appendChild(h2);
-    
-    // Créer le slider avec les 15 premières séries
-    // 'tv' = type de contenu (série TV)
-    let items = data.results.slice(0, 15);
-    
-    // Ajouter le slider au conteneur
-    container.appendChild(creerSlider(items, "serie"));
-    
-    // Afficher l'erreur dans la console
-}
-
-/**
- * Fonction pour afficher les documentaires dans un slider
- * Utilise l'endpoint 'discover' pour filtrer par genre
- */
-async function afficherDocumentaires() {
-    // Construire l'URL pour découvrir des films par genre
-    // discover/movie = endpoint pour découvrir des films avec filtres
-    // with_genres=99 = ID 99 correspond au genre "Documentaire"
-    // sort_by=popularity.desc = trier par popularité décroissante
-    const URL = BASE_URL
-        + `discover/movie`
-        + `?api_key=${API_KEY}`
-        + `&with_genres=99`
-        + `&page=1`
-        + `&sort_by=popularity.desc`;
-
-    // Faire la requête fetch et attendre la réponse
-    let response = await fetch(URL);
-    
-    // Vérifier si la requête a réussi
-    if (!response.ok) {
-        console.error("Echec du chargement des documentaires.");
-        return;
-    }
-    
-    // Convertir la réponse JSON en objet JavaScript
-    let data = await response.json();
-    
-    // Récupérer le conteneur HTML pour les documentaires
-    let container = document.getElementById("documentaires");
-        container.className = "gradient-green p-3";
-    
-    // Vider le conteneur (supprimer le loader)
-    container.innerHTML = "";
-    
-    // Créer le titre de la section
-    // Ajouter le titre au conteneur
-    let h2 = document.createElement("h2");
-        h2.textContent = "Documentaires";
-        h2.className = "h2 text-center mt-3 mb-4";
-    container.appendChild(h2);
-    
-    // Créer le slider avec les 15 premiers documentaires
-    // 'movie' car les documentaires sont considérés comme des films
-    let items = data.results.slice(0, 15);
-    
-    // Ajouter le slider au conteneur
-    container.appendChild(creerSlider(items, "movie"));
-    
-    // Afficher l'erreur dans la console
-}
-
-/**
- * Fonction pour afficher les animes (séries d'animation japonaises) dans un slider
- * Combine plusieurs filtres pour obtenir uniquement les animes
- */
-async function afficherAnimes() {
-    // Construire l'URL pour découvrir des séries TV avec filtres
-    // discover/tv = endpoint pour découvrir des séries avec filtres
-    // with_genres=16 = ID 16 correspond au genre "Animation"
-    // with_origin_country=JP = filtrer par pays d'origine = Japon
-    // sort_by=popularity.desc = trier par popularité décroissante
-    const URL = BASE_URL
-        + `discover/tv`
-        + `?api_key=${API_KEY}`
-        + `&with_genres=16`
-        + `&with_origin_country=JP`
-        + `&page=1`
-        + `&sort_by=popularity.desc`;
-    
-    // Faire la requête fetch et attendre la réponse
-    let response = await fetch(URL);
-
-    // Vérifier si la requête a réussi
-    if (!response.ok) {
-        console.error("Echec du chargement des documentaires.");
-        return;
-    }
-    
-    // Convertir la réponse JSON en objet JavaScript
-    let data = await response.json();
-    
-    // Récupérer le conteneur HTML pour les animes
-    let container = document.getElementById("animes");
-        container.className = "gradient-yellow p-3";
-    
-    // Vider le conteneur (supprimer le loader)
-    container.innerHTML = "";
-    
-    // Créer le titre de la section
-    // Ajouter le titre au conteneur
-    let h2 = document.createElement("h2");
-        h2.textContent = "Animes";
-        h2.className = "h2 text-center mt-3 mb-4";
-    container.appendChild(h2);
-    
-    // Créer le slider avec les 15 premiers animes
-    // 'tv' car les animes sont des séries TV
-    let items = data.results.slice(0, 15);
-    
-    // Ajouter le slider au conteneur
-    container.appendChild(creerSlider(items, "tv"));
-    
-    // Afficher l'erreur dans la console
 }
 
 /**

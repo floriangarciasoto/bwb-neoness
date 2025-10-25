@@ -111,6 +111,7 @@ main {
 
 .card {
     min-width: 20em;
+    max-width: 20em;
 }
 
 .card-img {
