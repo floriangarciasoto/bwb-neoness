@@ -3,9 +3,32 @@
 // Documentation du code (sans implémentation)
 // ========================================
 
+/**
+ * Fonction permettant d'obtenir la valeur de la clé d'API "API_KEY" de plusieurs manières
+ * @returns {String} - clé API
+ */
+function obtenirCleAPI() {
+    // Si la variable API_KEY_ENV a été définie, c'est que le script .env/tmdb.js a été chargé
+    // On demande le type de cette variable avec typeof, ce qui nous permet de vérifier
+    // la définition de la variable sans provoquer d'erreur
+    // Si le type de variable n'est pas "undefined", c'est qu'elle est déclarée, on peut donc prendre sa valeur
+    if (typeof API_KEY_ENV !== "undefined") return API_KEY_ENV;
+
+    // Si le fichier d'environement n'est pas accessible,
+    // on essaie alors de récuperer une clé via les paramètres GET
+    const parametresGET = new URLSearchParams(window.location.search);
+    const API_KEY_GET = parametresGET.get('api_key');
+    if (API_KEY_GET !== null) {
+        return API_KEY_GET;
+    }
+
+    // Sinon on retourne une clé vide
+    return '...';
+}
+
 // Configuration de l'API TMDB
 // Clé API personnelle pour accéder aux données de The Movie Database
-// const API_KEY = '...'; -> déjà présente dans le fichier d'environnement .env/tmdb.js
+const API_KEY = obtenirCleAPI();
 
 // URL de base pour toutes les requêtes API (version 3 de l'API TMDB)
 const BASE_URL = 'https://api.themoviedb.org/3/';
