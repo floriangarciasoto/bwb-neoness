@@ -31,9 +31,10 @@ async function chargerNetflopTMDB() {
                 // 'movie' = type de contenu
                 type: "movie",
                 // movie/popular = endpoint pour les films populaires
+                endpoint: `movie/popular`,
                 // language=fr-FR = obtenir les résultats en français
                 // page=1 = première page de résultats
-                query: `movie/popular` + `?language=fr-FR` + `&page=1`,
+                params: `?language=fr-FR` + `&page=1`,
                 // ID du noeud de la balise section dans laquelle sera affichée notre catégorie
                 nodeID: "films-populaires",
                 // Couleur du background de la section
@@ -45,9 +46,10 @@ async function chargerNetflopTMDB() {
                 // 'tv' = type de contenu (série TV)
                 type: "tv",
                 // tv/popular = endpoint pour les séries TV populaires
+                endpoint: `tv/popular`,
                 // language=fr-FR = obtenir les résultats en français
                 // page=1 = première page de résultats
-                query: `tv/popular` + `?language=fr-FR` + `&page=1`,
+                params: `?language=fr-FR` + `&page=1`,
                 // ID du noeud de la balise section dans laquelle sera affichée notre catégorie
                 nodeID: "series-populaires",
                 // Couleur du background de la section
@@ -59,9 +61,10 @@ async function chargerNetflopTMDB() {
                 // 'movie' car les documentaires sont considérés comme des films
                 type: "movie",
                 // discover/movie = endpoint pour découvrir des films avec filtres
+                endpoint: `discover/movie`,
                 // with_genres=99 = ID 99 correspond au genre "Documentaire"
                 // sort_by=popularity.desc = trier par popularité décroissante
-                query: `discover/movie` + `?with_genres=99` + `&page=1` + `&sort_by=popularity.desc`,
+                params: `?with_genres=99` + `&page=1` + `&sort_by=popularity.desc`,
                 // ID du noeud de la balise section dans laquelle sera affichée notre catégorie
                 nodeID: "documentaires",
                 // Couleur du background de la section
@@ -73,10 +76,11 @@ async function chargerNetflopTMDB() {
                 // 'tv' car les animes sont des séries TV
                 type: "tv",
                 // discover/tv = endpoint pour découvrir des séries avec filtres
+                endpoint: `discover/tv`,
                 // with_genres=16 = ID 16 correspond au genre "Animation"
                 // with_origin_country=JP = filtrer par pays d'origine = Japon
                 // sort_by=popularity.desc = trier par popularité décroissante
-                query: `discover/tv` + `?with_genres=16` + `&with_origin_country=JP` + `&page=1` + `&sort_by=popularity.desc`,
+                params: `?with_genres=16` + `&with_origin_country=JP` + `&page=1` + `&sort_by=popularity.desc`,
                 // ID du noeud de la balise section dans laquelle sera affichée notre catégorie
                 nodeID: "animes",
                 // Couleur du background de la section
@@ -95,7 +99,8 @@ async function chargerNetflopTMDB() {
                 afficherCategorie(
                     category.title,
                     category.type,
-                    category.query,
+                    category.endpoint,
+                    category.params,
                     category.nodeID,
                     category.color
                 )
@@ -121,12 +126,11 @@ async function chargerNetflopTMDB() {
  * @param {*} nodeID - id du noeud de la balise section dans laquelle sera affichée notre catégorie
  * @param {*} color - couleur du background de la section
  */
-async function afficherCategorie(title,type,query,nodeID,color) {
+async function afficherCategorie(title,type,endpoint,params,nodeID,color) {
     try {
         // Construire l'URL de la requête API avec les paramètres
         // api_key = notre clé d'authentification
-        const URL = BASE_URL + query + `&api_key=${API_KEY}`;
-        console.log("Fetching:",URL);
+        const URL = BASE_URL + endpoint + params + `&api_key=${API_KEY}`;
         
         // ============================================
         // FETCH : ÉTAPE 1 - Lancer la requête HTTP
@@ -159,10 +163,22 @@ async function afficherCategorie(title,type,query,nodeID,color) {
         
         // Récupérer le conteneur HTML où afficher les films
         let container = document.getElementById(nodeID);
-            container.className = `gradient-${color} p-3`;
-        
-        // Vider le conteneur (supprimer le loader animé)
-        container.innerHTML = "";
+        // Si la section existe déjà dans le DOM, on la vide
+        if (container !== null) {
+            // Vider le conteneur (supprimer le loader animé)
+            container.innerHTML = "";
+        }
+        // Sinon, on en ajoute une nouvelle avec le bon ID
+        else {
+            container = document.createElement("section");
+            container.id = nodeID;
+            // Ajout de la section au DOM
+            let main = document.getElementsByTagName("main")[0];
+            main.appendChild(container);
+        }
+
+        // Ajout de la couleur du background
+        container.className = `gradient-${color} p-3`;
         
         // Créer un élément h2 pour le titre de la section
         // Définir le texte du titre
@@ -176,9 +192,9 @@ async function afficherCategorie(title,type,query,nodeID,color) {
         // data.results = tableau de films reçu de l'API
         // slice(0, 15) = prendre seulement les 15 premiers
         let items = data.results.slice(0, 15);
-        let slider = creerSlider(items, type);
         
         // Ajouter le slider au conteneur
+        let slider = creerSlider(items, type, title);
         container.appendChild(slider);
 
     }
@@ -204,8 +220,8 @@ async function afficherCategorie(title,type,query,nodeID,color) {
  * @param {String} type - Type de contenu : 'movie' ou 'tv'
  * @returns {HTMLElement} - Conteneur complet du slider
  */
-function creerSlider(items, type) {
-    console.log("Items:",type,items);
+function creerSlider(items, type, title) {
+    console.log(title,items);
 
     // Créer le conteneur principal qui va contenir tout le slider
     // Ajouter la classe CSS 'slider-container'
@@ -329,17 +345,16 @@ function creerCarteTMDB(item, type) {
 
     // Récupérer la note moyenne et la formater à 1 décimale (ex: 7.3)
     // Si pas de note, afficher 'N/A'
-    let noteHTML = "N/A";
-    let note = -1;
-    if (Object.hasOwn(item,"vote_average")) {
-        note = (item.vote_average).toFixed(1)
-        noteHTML = "⭐ " + note;
+    let itemNote = -1;
+    if (Object.hasOwn(item,"vote_average") && item.vote_average !== 0) {
+        itemNote = item.vote_average.toFixed(1);
     }
     
     // Construire l'URL complète de l'image (affiche du film)
     // Si poster_path existe, utiliser l'URL TMDB, sinon image placeholder
-    let imgURL = "https://placehold.co/500x735";
-    if (Object.hasOwn(item,"poster_path")) {
+    const PLACEHOLDER_IMAGE = "images/film-poster-placeholder.jpg";
+    let imgURL = PLACEHOLDER_IMAGE;
+    if (Object.hasOwn(item,"poster_path") && item.poster_path !== null) {
         imgURL = IMAGE_BASE_URL + item.poster_path;
     }
 
@@ -349,13 +364,17 @@ function creerCarteTMDB(item, type) {
     // Définir la source de l'image
     cardPoster.src = imgURL;
     // Définir le texte alternatif (pour l'accessibilité)
-    cardPoster.setAttribute("alt","Affiche pour " + itemTitle);
+    cardPoster.alt = "Affiche pour " + itemTitle;
     // Ajouter la classe CSS pour le style
     cardPoster.className = "card-img";
     
     // Gérer les erreurs de chargement d'image
     // Si l'image ne charge pas, afficher une image placeholder
-    
+    cardPoster.onerror = () => {
+        cardPoster.src = PLACEHOLDER_IMAGE;
+        cardPoster.alt = "Affiche indisponible pour " + itemTitle;
+    };
+
     // === CRÉER LE CONTENEUR DES INFORMATIONS ===
     // Créer un div pour contenir toutes les informations textuelles
     // Ajouter la classe CSS pour le style
@@ -376,22 +395,27 @@ function creerCarteTMDB(item, type) {
     // Créer un paragraphe pour afficher la note
     let cardNote = document.createElement("p");
     // Définir le contenu HTML avec l'étoile et la note
-    cardNote.innerHTML = noteHTML;
-    cardNote.className = "card-note rounded m-0 ";
+    if (itemNote !== -1) {
+        cardNote.innerHTML = "⭐ " + itemNote;
+    }
+    else {
+        cardNote.innerHTML = "⭐ N/A";
+    }
+    cardNote.className = "card-note rounded m-0";
     
     // === AJOUTER UNE COULEUR SELON LA NOTE ===
     // Convertir la note en nombre pour la comparer
     // Si note >= 7, couleur verte (bonne note)
     // Si note entre 5 et 7, couleur orange (note moyenne)
-    // Si note < 5, couleur rouge (mauvaise note)
-    cardNote.className += note >= 7 ? "card-note-green" : note >= 5 ? "card-note-orange" : "card-note-red";
+    // Si note entre 0 et 5, couleur rouge (mauvaise note)
+    cardNote.className += itemNote >= 7 ? " card-note-green" : itemNote >= 5 ? " card-note-orange" : itemNote > 0 ? " card-note-red" : "";
     
     // === CRÉER L'ÉLÉMENT DATE DE SORTIE ===
     // Créer un paragraphe pour la date de sortie
     let cardDate = document.createElement("time");
         cardDate.className = "d-block";
     // Si dateSortie existe, la formater en français (jj/mm/aaaa)
-    if (itemDate !== undefined) {
+    if (itemDate !== undefined && itemDate !== "") {
         cardDate.dateTime = itemDate;
         itemDate = new Date(itemDate);
         itemDate = itemDate.toLocaleDateString('fr-FR');
