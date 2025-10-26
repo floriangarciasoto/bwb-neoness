@@ -125,13 +125,14 @@ async function chargerNetflopTMDB() {
                     category.endpoint,
                     category.params,
                     category.nodeID,
-                    category.color
+                    category.color,
+                    category.itemsMustHave
                 )
             )
         ).then(() => {
             // Message de succès quand tout est chargé
             console.log("Tout est chargé.");
-        })
+        });
     } catch (error) {
         // Si une erreur se produit, l'afficher dans la console
         console.error("Echec du chargement de Netflop TMDB :",error);
@@ -143,13 +144,15 @@ async function chargerNetflopTMDB() {
 /**
  * Fonction pour afficher le contenu d'une catégorie dans un slider
  * Fonction asynchrone car elle fait une requête à l'API
- * @param {*} title - titre h2 de la section
- * @param {*} type - type de contenu
- * @param {*} query - partie finale de l'URL pour l'API contenant l'endpoint et les paramètres de la requête
- * @param {*} nodeID - id du noeud de la balise section dans laquelle sera affichée notre catégorie
- * @param {*} color - couleur du background de la section
+ * @param {String} title - titre h2 de la section
+ * @param {String} type - type de contenu
+ * @param {String} endpoint - endpoint de l'URL
+ * @param {String} params - paramètres GET de l'URL
+ * @param {String} nodeID - id du noeud de la balise section dans laquelle sera affichée notre catégorie
+ * @param {String} color - couleur du background de la section
+ * @param {Function} itemsMustHave - condition de filtrage pour les cards, si défini, exemple : note au dessus de 5
  */
-async function afficherCategorie(title,type,endpoint,params,nodeID,color) {
+async function afficherCategorie(title,type,endpoint,params,nodeID,color,itemsMustHave) {
     try {
         // Construire l'URL de la requête API avec les paramètres
         // api_key = notre clé d'authentification
@@ -172,7 +175,7 @@ async function afficherCategorie(title,type,endpoint,params,nodeID,color) {
         // Si erreur (404, 500...), on lance une exception
         if (!response.ok) {
             console.error("Impossible de récuperer les informations de la catégorie :",title);
-            return;
+            throw new Error(`HTTP ${response.status}`);
         }
         
         // ============================================
@@ -215,6 +218,11 @@ async function afficherCategorie(title,type,endpoint,params,nodeID,color) {
         // data.results = tableau de films reçu de l'API
         // slice(0, 15) = prendre seulement les 15 premiers
         let items = data.results.slice(0, 15);
+        // Si une condition de filtrage des items a été définie
+        if (itemsMustHave !== undefined) {
+            // On applique d'abord le filtre avant de faire la découpe
+            items = data.results.filter(itemsMustHave).slice(0, 15);
+        }
         
         // Ajouter le slider au conteneur
         let slider = creerSlider(items, type, title);
