@@ -37,6 +37,76 @@ const BASE_URL = 'https://api.themoviedb.org/3/';
 // w500 = largeur de 500 pixels pour les images
 const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500/';
 
+// Mapping des catégories sous forme de tableau d'objets avec chacun contenant les propriétés necéssaires
+let categories = [
+    {
+        // Titre h2 de la section
+        title: "Films populaires",
+        // 'movie' = type de contenu
+        type: "movie",
+        // movie/popular = endpoint pour les films populaires
+        endpoint: `movie/popular`,
+        // language=fr-FR = obtenir les résultats en français
+        // page=1 = première page de résultats
+        params: `?language=fr-FR` + `&page=1`,
+        // ID du noeud de la balise section dans laquelle sera affichée notre catégorie
+        nodeID: "films-populaires",
+        // Couleur du background de la section
+        color: "red"
+    },
+    {
+        // Titre h2 de la section
+        title: "Séries populaires",
+        // 'tv' = type de contenu (série TV)
+        type: "tv",
+        // tv/popular = endpoint pour les séries TV populaires
+        endpoint: `tv/popular`,
+        // language=fr-FR = obtenir les résultats en français
+        // page=1 = première page de résultats
+        params: `?language=fr-FR` + `&page=1`,
+        // ID du noeud de la balise section dans laquelle sera affichée notre catégorie
+        nodeID: "series-populaires",
+        // Couleur du background de la section
+        color: "blue"
+    },
+    {
+        // Titre h2 de la section
+        title: "Documentaires",
+        // 'movie' car les documentaires sont considérés comme des films
+        type: "movie",
+        // discover/movie = endpoint pour découvrir des films avec filtres
+        endpoint: `discover/movie`,
+        // with_genres=99 = ID 99 correspond au genre "Documentaire"
+        // sort_by=popularity.desc = trier par popularité décroissante
+        params: `?with_genres=99` + `&page=1` + `&sort_by=popularity.desc`,
+        // ID du noeud de la balise section dans laquelle sera affichée notre catégorie
+        nodeID: "documentaires",
+        // Couleur du background de la section
+        color: "green"
+    },
+    {
+        // Titre h2 de la section
+        title: "Animes les mieux notés",
+        // 'tv' car les animes sont des séries TV
+        type: "tv",
+        // discover/tv = endpoint pour découvrir des séries avec filtres
+        endpoint: `discover/tv`,
+        // with_genres=16 = ID 16 correspond au genre "Animation"
+        // with_origin_country=JP = filtrer par pays d'origine = Japon
+        // sort_by=popularity.desc = trier par popularité décroissante
+        params: `?with_genres=16` + `&with_origin_country=JP` + `&sort_by=popularity.desc`,
+        // ID du noeud de la balise section dans laquelle sera affichée notre catégorie
+        nodeID: "animes",
+        // Couleur du background de la section
+        color: "yellow",
+        // Condition d'affichage des items reçu par l'API, on affiche que ceux qui ont une note supérieure à 7
+        itemsMustHave: item => item.vote_average > 7
+    }
+];
+// Ajoute des catégories bonus si elles ont été définies et sont accessibles depuis l'env
+if (typeof categoriesBonus !== "undefined") categories.push(...categoriesBonus);
+
+
 /**
  * Fonction principale pour charger toutes les données depuis TMDB
  * Fonction asynchrone (async) car elle doit attendre les réponses de l'API
@@ -47,70 +117,6 @@ async function chargerNetflopTMDB() {
     
     try {
         // Charger les catégories en parallèle avec Promise.all()
-        let categories = [
-            {
-                // Titre h2 de la section
-                title: "Films populaires",
-                // 'movie' = type de contenu
-                type: "movie",
-                // movie/popular = endpoint pour les films populaires
-                endpoint: `movie/popular`,
-                // language=fr-FR = obtenir les résultats en français
-                // page=1 = première page de résultats
-                params: `?language=fr-FR` + `&page=1`,
-                // ID du noeud de la balise section dans laquelle sera affichée notre catégorie
-                nodeID: "films-populaires",
-                // Couleur du background de la section
-                color: "red"
-            },
-            {
-                // Titre h2 de la section
-                title: "Séries populaires",
-                // 'tv' = type de contenu (série TV)
-                type: "tv",
-                // tv/popular = endpoint pour les séries TV populaires
-                endpoint: `tv/popular`,
-                // language=fr-FR = obtenir les résultats en français
-                // page=1 = première page de résultats
-                params: `?language=fr-FR` + `&page=1`,
-                // ID du noeud de la balise section dans laquelle sera affichée notre catégorie
-                nodeID: "series-populaires",
-                // Couleur du background de la section
-                color: "blue"
-            },
-            {
-                // Titre h2 de la section
-                title: "Documentaires",
-                // 'movie' car les documentaires sont considérés comme des films
-                type: "movie",
-                // discover/movie = endpoint pour découvrir des films avec filtres
-                endpoint: `discover/movie`,
-                // with_genres=99 = ID 99 correspond au genre "Documentaire"
-                // sort_by=popularity.desc = trier par popularité décroissante
-                params: `?with_genres=99` + `&page=1` + `&sort_by=popularity.desc`,
-                // ID du noeud de la balise section dans laquelle sera affichée notre catégorie
-                nodeID: "documentaires",
-                // Couleur du background de la section
-                color: "green"
-            },
-            {
-                // Titre h2 de la section
-                title: "Animes",
-                // 'tv' car les animes sont des séries TV
-                type: "tv",
-                // discover/tv = endpoint pour découvrir des séries avec filtres
-                endpoint: `discover/tv`,
-                // with_genres=16 = ID 16 correspond au genre "Animation"
-                // with_origin_country=JP = filtrer par pays d'origine = Japon
-                // sort_by=popularity.desc = trier par popularité décroissante
-                params: `?with_genres=16` + `&with_origin_country=JP` + `&page=1` + `&sort_by=popularity.desc`,
-                // ID du noeud de la balise section dans laquelle sera affichée notre catégorie
-                nodeID: "animes",
-                // Couleur du background de la section
-                color: "yellow"
-            }
-        ];
-
         // await = attendre que toutes les promesses soient terminées
         // Promise.all() = exécuter plusieurs requêtes en même temps (plus rapide)
         await Promise.all(
@@ -196,6 +202,7 @@ async function afficherCategorie(title,type,endpoint,params,nodeID,color,itemsMu
         }
         // Sinon, on en ajoute une nouvelle avec le bon ID
         else {
+            // Création d'un noeud section avec attribution d'ID
             container = document.createElement("section");
             container.id = nodeID;
             // Ajout de la section au DOM
@@ -249,6 +256,7 @@ async function afficherCategorie(title,type,endpoint,params,nodeID,color,itemsMu
  * Créer la structure complète du slider avec boutons de navigation
  * @param {Array} items - Tableau des films/séries à afficher
  * @param {String} type - Type de contenu : 'movie' ou 'tv'
+ * @param {String} title - Titre de la section des items : uniquement pour le log
  * @returns {HTMLElement} - Conteneur complet du slider
  */
 function creerSlider(items, type, title) {
