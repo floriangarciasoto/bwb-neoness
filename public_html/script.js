@@ -211,7 +211,7 @@ async function afficherCategorie(title,type,endpoint,params,nodeID,color,itemsMu
         }
 
         // Ajout de la couleur du background
-        container.className = `gradient-${color} p-3`;
+        container.className = `bg-gradient-${color} p-3`;
         
         // Créer un élément h2 pour le titre de la section
         // Définir le texte du titre
@@ -273,7 +273,7 @@ function creerSlider(items, type, title) {
     // Ajouter le symbole flèche gauche (◄) avec code HTML
     // Désactiver le bouton par défaut (on est au début)
     let buttonLeft = document.createElement("button");
-        buttonLeft.className = "slider-button m-3 me-4";
+        buttonLeft.className = "slider-button m-3 me-4 d-none d-lg-block";
         buttonLeft.innerHTML = "&#x1F844;";
         buttonLeft.setAttribute("disabled",true);
 
@@ -282,7 +282,7 @@ function creerSlider(items, type, title) {
     // Ajouter les classes CSS pour le style et la position
     // Ajouter le symbole flèche droite (►) avec code HTML
     let buttonRight = document.createElement("button");
-        buttonRight.className = "slider-button m-3 ms-4";
+        buttonRight.className = "slider-button m-3 ms-4 d-none d-lg-block";
         buttonRight.innerHTML = "&#x1F846;";
     
     // === WRAPPER DES CARTES ===
