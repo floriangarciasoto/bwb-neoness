@@ -558,9 +558,11 @@ function creerCarteTMDB(item, type) {
     // === CRÉER LE TITRE ===
     // Créer un élément h3 pour le titre du film/série
     // Définir le texte du titre
+    // Définir un title pour afficher un titre trop grand
     let cardTitle = document.createElement("h3");
         cardTitle.className = "card-title text-center h3 my-2 max-lines max-lines-2";
         cardTitle.textContent = itemTitle;
+        cardTitle.title = itemTitle;
 
     let cardSpecs = document.createElement("div");
         cardSpecs.className = "d-flex justify-content-between align-items-center";
