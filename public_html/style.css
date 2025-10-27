@@ -99,11 +99,19 @@ main {
     background-color: #222;
     color: white;
     font-weight: bold;
-    font-size: 30px;
+    font-size: 35px;
     cursor: pointer;
 }
 .slider-button:disabled {
     color: #555;
+}
+.slider-button-left span {
+    display: block;
+    transform: translateY(-2px) scaleX(-1);
+}
+.slider-button-right span {
+    display: block;
+    transform: translateY(-2px);
 }
 
 .card {

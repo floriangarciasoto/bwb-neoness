@@ -273,8 +273,10 @@ function creerSlider(items, type, title) {
     // Ajouter le symbole flèche gauche (◄) avec code HTML
     // Désactiver le bouton par défaut (on est au début)
     let buttonLeft = document.createElement("button");
-        buttonLeft.className = "slider-button m-3 me-4 d-none d-lg-block";
-        buttonLeft.innerHTML = "&#x1F844;";
+        buttonLeft.className = "slider-button slider-button-left m-3 me-4 d-none d-lg-block";
+        let buttonLeftInner = document.createElement("span");
+            buttonLeftInner.innerHTML = "&#x279C;";
+        buttonLeft.appendChild(buttonLeftInner);
         buttonLeft.setAttribute("disabled",true);
 
     // === BOUTON SUIVANT (droite) ===
@@ -282,8 +284,10 @@ function creerSlider(items, type, title) {
     // Ajouter les classes CSS pour le style et la position
     // Ajouter le symbole flèche droite (►) avec code HTML
     let buttonRight = document.createElement("button");
-        buttonRight.className = "slider-button m-3 ms-4 d-none d-lg-block";
-        buttonRight.innerHTML = "&#x1F846;";
+        buttonRight.className = "slider-button slider-button-right m-3 ms-4 d-none d-lg-block";
+        let buttonRightInner = document.createElement("span");
+            buttonRightInner.innerHTML = "&#x279C;";
+        buttonRight.appendChild(buttonRightInner);
     
     // === WRAPPER DES CARTES ===
     // Créer le conteneur qui va contenir toutes les cartes
@@ -303,31 +307,159 @@ function creerSlider(items, type, title) {
     
     // === FONCTION DE SCROLL ===
     // Fonction pour faire défiler le slider vers la gauche ou la droite
-    // Calculer la distance de scroll (80% de la largeur visible)
     // Si direction est 'next', scroller vers la droite
     // Sinon, scroller vers la gauche
+    // ---
+    // Je devais normalement utiliser une taille arbitraire (80% du witdh du slider) pour déterminer
+    // la distance de scroll, mais comme j'ai le temps, je propose de faire beaucoup mieux.
+    // Ici, on va laisser libre cour à l'utilisateur lorsqu'il va scroller manuellement. Le scroll via
+    // les boutons de scroll va remettre automatiquement les cards au bon endroit, peut importe l'emplacement du scroll.
+    // Cette méthode permettra de toujours réaliser un scroll pertinant, peut importe la largeur des cards.
+    // Cela donnera une bonne impression à l'utilisateur que le site maitrise ce qu'il fait, pas mal non ?
+    let sliderScroll = (next) => {
+        // Distance de scroll à effectuer lros d'un clic sur l'un des deux boutons
+        // Pour l'instant on ne fait qu'initialiser la variable car sa valeur sera calculée après
+        let scrollDistance;
+
+        // Stockage des cards HTML dans un tableau, ce qui nous permettra de connaître la position de chacune
+        // On prendra pour chaque card son décalage gauche
+        let cards = wrapper.getElementsByTagName("article");
+
+        // Décalage gauche
+        // Lorsque l'on demandera le décalage de chaque card vers la gauche avec .offsetLeft, on obtiendra
+        // en réalité son décalage gauche depuis la fenêtre, il faut donc prendre en compte le décalage
+        // gauche du container, ici le wrapper
+        let wrapperOffset = wrapper.offsetLeft;
+
+        // Largeur d'une card, elles sont censés avoir toutes la même taille via le CSS
+        // On prend donc directement la largeur de la première
+        // Cela nous permettra de calculer la visibilité partielle ou totale d'une card
+        let cardWidth = cards[0].offsetWidth;
+
+        // Largeur de la partie visible du wrapper, sera aussi utilie pour les calculs
+        let wrapperWidth = wrapper.offsetWidth;
+
+        // Si c'est le bouton de droite qui a été appuyé
+        if (next) {
+            // On parcourt chaque card, pour trouver la première card
+            // partiellement ou totalement invisible vers la droite
+            for (let i = 0; i < cards.length; i++) {
+                // On évalue donc pour chaque fois la distance de scroll que l'on aura à effectuer
+                // On se réfèrerat à chaque fois au décalage gauche d'une card, car c'est
+                // la partie gauche de la card que l'on voudra plaquer au début du scroll.
+                // On soustrait le décalage de chaque card à celui du wrapper,
+                // car le scroll commence à 0 mais pas le décalage des cards,
+                // eux c'est leur décalage par rapport à la fenêtre.
+                scrollDistance = cards[i].offsetLeft - wrapperOffset;
+                
+                // Pour chaque card on ajoute sa largeur pour obtenir le décalage gauche du bord
+                // droit de la card.
+                // On détermine le décalage gauche de la partie droite du wrapper en partant
+                // de son niveau de scroll (on obtient le décalage gauche du bord gauche),
+                // puis en additionnant la largeur du wrapper (pour aller à son bord droit).
+                // Si le bord droit de la card est plus loin que le bord droit du scroll
+                // (soit le décalage de la card plus grand que celui du wrapper),
+                // alors on a trouvé notre première card pas complétement visible, on peut s'arrêter là.
+                if (scrollDistance + cardWidth > wrapper.scrollLeft + wrapperWidth) break;
+            }
+        }
+        // Sinon, c'est forcément le bouton de gauche qui a été appuyé
+        else {
+            // Cette fois-ci on parcourt chaque card dans le sens inverse,
+            // car l'on veut déterminer la première card partiellement visible mais vers la gauche
+            for (let i = cards.length-1; i >= 0; i--) {
+
+                // On évalue alors son décalage gauche de la même manière (toujours évaluer par rapport
+                // au décalage gauche car c'est celui-ci qui sera utilisé par rapport au scroll automatique)
+                scrollDistance = cards[i].offsetLeft - wrapperOffset;
+
+                // Cette fois-ci, on vérifie uniquement le décalage gauche de chaque card, car ce n'est pas
+                // du bord droit que l'on a besoin pour vérifier la visibilité à gauche, mais juste le bord gauche.
+                if (scrollDistance < wrapper.scrollLeft) {
+                    // Si c'est le cas, alors on doit se baser sur cette card pour placer notre scroll.
+                    // Il faut s'imaginer avec cette card tout à droite, on doit donc déterminer
+                    // le nombre de card que l'on peut placer en plus dans la largeur restante vers la gauche.
+                    // C'est donc cette dernière card de gauche qui sera prise en compte pour le scroll final.
+
+                    // On calcule alors la nouvelle limite à atteindre.
+                    // On part du bord droit de la card trouvée (car l'on considère pour notre calcul
+                    // qu'elle est collée à droite du wrapper), et on va faire la gauche de la longueur du wrapper
+                    let limit = scrollDistance + cardWidth - wrapperWidth;
+
+                    // On continue de parcourir les cards dans le sens inverse à partir de la prochaine card
+                    for (let j = i-1; j >= 0; j--) {
+                        // On évalue le scroll à chaque fois
+                        scrollDistance = cards[j].offsetLeft - wrapperOffset;
+                        // S'il reste encore une card à gauche, et que cette dernière dépasserait de
+                        // notre nouvelle fenêtre de scroll, alors on peut s'arrêter là,
+                        // on prendra le scroll de la card que l'on vient d'évaluer
+                        if (j > 0 && cards[j-1].offsetLeft - wrapperOffset < limit) break;
+                    }
+
+                    // Inutile de continuer la boucle après avoir trouvé la bonne card
+                    break;
+                }
+            }
+        }
+
+        // Il faut necéssairement toujours partir du niveau de scroll où l'on se situe.
+        // On prend donc uniquement la différence entre le notre niveau de scroll initial
+        // et le niveau de scroll de destination.
+        // Le niveau de scroll rendra le scroll à effectuer positif si la destination est
+        // plus grande que le niveau de scroll, et négatif si elle est plus petite.
+        scrollDistance -= wrapper.scrollLeft;
+
+        // On utilise la méthode du navigateur .scrollBy() sur le wrapper afin d'avoir une animation
+        // de scroll sans avoir le besoin d'une librairie externe
+        wrapper.scrollBy({
+            // Décalage gauche = niveau de scroll
+            // Ici on indique la valeur à ajouter à ce décalage
+            // On ajoute donc au décalage gauche = on va vers la droite
+            // Si négatif, on va vers la gauche
+            left: scrollDistance,
+            // Type de transition, afin d'avoir une animation au scroll
+            behavior: "smooth"
+        });
+    };
     
     // === FONCTION POUR METTRE À JOUR LES BOUTONS ===
     // Active ou désactive les boutons selon la position du scroll
-    // Désactiver le bouton précédent si on est tout à gauche (début)
-    // scrollLeft <= 0 signifie qu'on ne peut plus aller à gauche
-    
-    // Calculer la position maximale du scroll (largeur totale - largeur visible)
-    // Désactiver le bouton suivant si on est tout à droite (fin)
-    // -10 pour une petite marge d'erreur
+    let updateSliderScrollButtons = () => {
+        // Désactiver le bouton précédent si on est tout à gauche (début)
+        // scrollLeft <= 0 signifie qu'on ne peut plus aller à gauche
+        if (wrapper.scrollLeft <= 0) buttonLeft.setAttribute("disabled",true);
+        else buttonLeft.removeAttribute("disabled");
+       
+        // Calculer la position maximale du scroll (largeur totale - largeur visible)
+        // Désactiver le bouton suivant si on est tout à droite (fin)
+        // -10 pour une petite marge d'erreur
+        if (wrapper.scrollLeft > wrapper.scrollWidth - wrapper.offsetWidth - 10) buttonRight.setAttribute("disabled",true);
+        else buttonRight.removeAttribute("disabled");
+    };
     
     // === ÉVÉNEMENTS DES BOUTONS ===
     // Quand on clique sur le bouton précédent
     // Scroller vers la gauche
     // Après 300ms, mettre à jour l'état des boutons (attendre la fin de l'animation)
-    
+    buttonLeft.onclick = () => {
+        sliderScroll(false);
+        setTimeout(()=>updateSliderScrollButtons(),300);
+    };
+
     // Quand on clique sur le bouton suivant
     // Scroller vers la droite
     // Après 300ms, mettre à jour l'état des boutons
+    buttonRight.onclick = () => {
+        sliderScroll(true);
+        setTimeout(()=>updateSliderScrollButtons(),300);
+    };
     
     // === ÉVÉNEMENT DE SCROLL ===
     // Quand l'utilisateur scroll manuellement, mettre à jour les boutons
-    
+    wrapper.onscroll = () => {
+        updateSliderScrollButtons();
+    };
+
     // === INITIALISATION ===
     // Vérifier l'état initial des boutons après un court délai
     // (nécessaire pour que le DOM soit bien rendu)
