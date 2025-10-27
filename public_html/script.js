@@ -108,6 +108,22 @@ if (typeof categoriesBonus !== "undefined") categories.push(...categoriesBonus);
 
 
 /**
+ * Fonction permettant d'ajouter les sections dans le DOM pour chaque catégorie de façon synchrone
+ */
+function creerSections() {
+    // Ratachement au DOM via le main déjà définit dans index.html
+    let main = document.getElementsByTagName("main")[0];
+    // Pour chaque section
+    for (i in categories) {
+        // Création d'un noeud section avec attribution d'ID
+        let section = document.createElement("section");
+            section.id = categories[i].nodeID;
+        // Ajout de la section au DOM
+        main.appendChild(section);
+    }
+}
+
+/**
  * Fonction principale pour charger toutes les données depuis TMDB
  * Fonction asynchrone (async) car elle doit attendre les réponses de l'API
  */
@@ -193,23 +209,10 @@ async function afficherCategorie(title,type,endpoint,params,nodeID,color,itemsMu
         // Résultat : 'data' contient un objet avec { results: [...films] }
         let data = await response.json();
         
-        // Récupérer le conteneur HTML où afficher les films
+        // Récupérer le conteneur HTML où afficher le slider
         let container = document.getElementById(nodeID);
-        // Si la section existe déjà dans le DOM, on la vide
-        if (container !== null) {
-            // Vider le conteneur (supprimer le loader animé)
-            container.innerHTML = "";
-        }
-        // Sinon, on en ajoute une nouvelle avec le bon ID
-        else {
-            // Création d'un noeud section avec attribution d'ID
-            container = document.createElement("section");
-            container.id = nodeID;
-            // Ajout de la section au DOM
-            let main = document.getElementsByTagName("main")[0];
-            main.appendChild(container);
-        }
-
+        // Vider le conteneur (supprimer le loader animé)
+        container.innerHTML = "";
         // Ajout de la couleur du background
         container.className = `bg-gradient-${color} p-3`;
         
@@ -786,6 +789,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // === LANCEMENT DE L'APPLICATION ===
-    // Si la clé API est valide, charger toutes les données
+    // Si la clé API est valide, créer les sections
+    creerSections();
+    // Et charger toutes les données
     chargerNetflopTMDB();
 });
