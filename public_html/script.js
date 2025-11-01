@@ -237,7 +237,6 @@ async function afficherCategorie(title,type,endpoint,params,nodeID,color,itemsMu
         // Ajouter le slider au conteneur
         let slider = creerSlider(items, type, title);
         container.appendChild(slider);
-
     }
     catch(error) {
         // ============================================
@@ -252,7 +251,6 @@ async function afficherCategorie(title,type,endpoint,params,nodeID,color,itemsMu
         console.error("Erreur lors du chargement de la catégorie :",title);
         console.error(error);
     }
-    
 }
 
 /**
@@ -663,8 +661,12 @@ function creerCarteTMDB(item, type) {
     // Construire l'URL de la page de détails selon le type (film ou série)
     // Ouvrir l'URL dans la même fenêtre
     card.onclick = function() {
-        const DETAILS_URL = `description/?type=${type}&id=${item.id}`;
-        console.log("Card click :",DETAILS_URL);
+        // Construction de l'URL vers la page de détails
+        const DETAILS_URL = `details/?id=${item.id}&type=${type}`;
+        
+        // Redirection de l'utilisateur vers la page de détails,
+        // remplace l'URL donc n'ouvre pas une nouvelle page
+        window.location.href = DETAILS_URL;
     }
     
     // Retourner la carte complète

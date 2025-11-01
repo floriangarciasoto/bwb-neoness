@@ -3,10 +3,34 @@
 // Documentation du code (sans implémentation)
 // ========================================
 
-// Configuration de l'API TMDB (clé chargée depuis config.js)
-// const TMDB_API_KEY = '...'; -> déjà présente dans le fichier d'environnement .env/tmdb.js
-const TMDB_BASE_URL = '...';
-const TMDB_IMAGE_BASE_URL = '...';
+/**
+ * Fonction permettant d'obtenir la valeur de la clé d'API "API_KEY" de plusieurs manières
+ * @returns {String} - clé API
+ */
+function obtenirCleAPI() {
+    // Si la variable API_KEY_ENV a été définie, c'est que le script .env/tmdb.js a été chargé
+    // On demande le type de cette variable avec typeof, ce qui nous permet de vérifier
+    // la définition de la variable sans provoquer d'erreur
+    // Si le type de variable n'est pas "undefined", c'est qu'elle est déclarée, on peut donc prendre sa valeur
+    if (typeof API_KEY_ENV !== "undefined") return API_KEY_ENV;
+
+    // Si le fichier d'environement n'est pas accessible,
+    // on essaie alors de récuperer une clé via les paramètres GET
+    const parametresGET = new URLSearchParams(window.location.search);
+    const API_KEY_GET = parametresGET.get('api_key');
+    if (API_KEY_GET !== null) {
+        return API_KEY_GET;
+    }
+
+    // Sinon on retourne une clé vide
+    return '...';
+}
+
+// Configuration de l'API TMDB (clé chargée depuis .env/tmdb.js)
+const TMDB_API_KEY = obtenirCleAPI();
+
+const TMDB_BASE_URL = 'https://api.themoviedb.org/3/';
+const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500/';
 
 /**
  * Fonction pour récupérer les paramètres de l'URL
@@ -15,14 +39,19 @@ const TMDB_IMAGE_BASE_URL = '...';
  */
 function getURLParams() {
     // Créer un objet URLSearchParams avec la query string de l'URL actuelle
+    const GETparams = new URLSearchParams(window.location.search);
     
     // Extraire le paramètre 'id' (ex: "550" pour Fight Club)
+    const id = GETparams.get('id');
     
     // Extraire le paramètre 'type' (ex: "movie" ou "tv")
+    const type = GETparams.get('type');
     
     // Afficher les paramètres dans la console pour debug
+    console.log(`Paramètres : id=${id}, type=${type}`);
     
     // Retourner un objet avec id et type
+    return {id:id, type:type};
 }
 
 /**
@@ -31,53 +60,91 @@ function getURLParams() {
  */
 async function chargerDetailsItemTMDB() {
     // Afficher un message de chargement temporaire dans le body
-    
+    let main = document.getElementsByTagName("main")[0];
+    let tempMessage = document.createElement("p");
+        tempMessage.className = "m-5 p-5 text-center"
+        tempMessage.textContent = "Chargement des détails ...";
+    main.appendChild(tempMessage);
+
     // Récupérer les paramètres de l'URL (id et type)
+    const params = getURLParams();
     
     // Extraire l'ID et le type depuis l'objet retourné
-    // Par défaut: 'movie' si le type n'est pas spécifié
+    let id = params.id;
+    let type = params.type;
     
     // Vérifier que l'ID existe
     // Si pas d'ID, afficher un message d'erreur et arrêter
-    
-    // ============================================
-    // FETCH : ÉTAPE 1 - Lancer la requête HTTP
-    // ============================================
-    // fetch(url) envoie une requête HTTP GET vers l'URL
-    // C'est ASYNCHRONE : le code continue pendant que la requête se fait
-    // await = ATTENDRE que la requête soit terminée avant de continuer
-    // Résultat : un objet Response qui contient les infos de la réponse HTTP
-    
-    // ============================================
-    // FETCH : ÉTAPE 2 - Vérifier le statut HTTP
-    // ============================================
-    // response.ok = true si le code HTTP est 200-299 (succès)
-    // response.ok = false si erreur 404, 500, etc.
-    // Si erreur, on lance une exception avec throw
-    
-    // ============================================
-    // FETCH : ÉTAPE 3 - Extraire les données JSON
-    // ============================================
-    // response.json() lit le corps de la réponse et le convertit en objet JavaScript
-    // C'est aussi ASYNCHRONE, donc on utilise await
-    // Résultat : un objet JavaScript avec les données de TMDB
-    
-    // ============================================
-    // FETCH : Deuxième appel API pour les crédits
-    // ============================================
-    // Même processus : construire URL, fetch, vérifier, parser JSON
-    // Récupère les informations sur le casting (acteurs, réalisateur)
-    
-    // Afficher les détails en appelant la fonction d'affichage
-    
-    // ============================================
-    // GESTION DES ERREURS
-    // ============================================
-    // Le bloc try/catch capture toutes les erreurs :
-    // - Erreurs réseau (pas d'internet)
-    // - Erreurs HTTP (404, 500, etc.)
-    // - Erreurs de parsing JSON
-    // - Erreurs avec throw new Error()
+    if (id === null || id === "") {
+        alert("Impossible de charger les détails, vous allez être redirigé vers la page d'accueil.");
+        window.location.href = "..";
+    }
+
+    // Par défaut: 'movie' si le type n'est pas spécifié
+    if (type === null || type === "") {
+        type = "movie";
+    }
+
+    try {
+        // ============================================
+        // FETCH : ÉTAPE 1 - Lancer la requête HTTP
+        // ============================================
+        // fetch(url) envoie une requête HTTP GET vers l'URL
+        // C'est ASYNCHRONE : le code continue pendant que la requête se fait
+        // await = ATTENDRE que la requête soit terminée avant de continuer
+        // Résultat : un objet Response qui contient les infos de la réponse HTTP
+        const URL = TMDB_BASE_URL + `${type}/` + id + `?language=fr-FR` + `&api_key=${TMDB_API_KEY}`;
+        let response = await fetch(URL);
+        
+        // ============================================
+        // FETCH : ÉTAPE 2 - Vérifier le statut HTTP
+        // ============================================
+        // response.ok = true si le code HTTP est 200-299 (succès)
+        // response.ok = false si erreur 404, 500, etc.
+        // Si erreur, on lance une exception avec throw
+        if (!response.ok) {
+            console.error("Impossible de récuperer les détails.");
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        // ============================================
+        // FETCH : ÉTAPE 3 - Extraire les données JSON
+        // ============================================
+        // response.json() lit le corps de la réponse et le convertit en objet JavaScript
+        // C'est aussi ASYNCHRONE, donc on utilise await
+        // Résultat : un objet JavaScript avec les données de TMDB
+        let data = await response.json();
+        let details = data;
+        
+        // ============================================
+        // FETCH : Deuxième appel API pour les crédits
+        // ============================================
+        // Même processus : construire URL, fetch, vérifier, parser JSON
+        // Récupère les informations sur le casting (acteurs, réalisateur)
+        const creditsURL = TMDB_BASE_URL + `${type}/` + `${id}/` + `credits` + `?language=fr-FR` + `&api_key=${TMDB_API_KEY}`;
+        response = await fetch(creditsURL);
+        if (!response.ok) {
+            console.error("Impossible de récuperer les credits.");
+            throw new Error(`HTTP ${response.status}`);
+        }
+        data = await response.json();
+        let credits = data;
+        
+        // Afficher les détails en appelant la fonction d'affichage
+        afficherDetailsItemTMDB(details, credits, type, id);
+    }
+    catch(error) {
+        // ============================================
+        // GESTION DES ERREURS
+        // ============================================
+        // Le bloc try/catch capture toutes les erreurs :
+        // - Erreurs réseau (pas d'internet)
+        // - Erreurs HTTP (404, 500, etc.)
+        // - Erreurs de parsing JSON
+        // - Erreurs avec throw new Error()
+        console.error("Erreur lors du chargement des détails.");
+        console.error(error);
+    }
 }
 
 /**
@@ -89,6 +156,7 @@ async function chargerDetailsItemTMDB() {
  * @param {String} itemId - ID TMDB du film/série
  */
 function afficherDetailsItemTMDB(item, credits, itemType, itemId) {
+    console.log("afficherDetailsItemTMDB", item, credits, itemType, itemId);
     // === EXTRACTION DES DONNÉES ===
     // Extraire le titre (title pour films, name pour séries)
     
@@ -308,4 +376,5 @@ function retourAccueil() {
  */
 document.addEventListener('DOMContentLoaded', function() {
     // Appeler chargerDetailsItemTMDB() pour démarrer le chargement
+    chargerDetailsItemTMDB();
 });
