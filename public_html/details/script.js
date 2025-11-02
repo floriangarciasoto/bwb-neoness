@@ -227,6 +227,11 @@ function afficherDetailsItemTMDB(item, credits, itemType, itemId) {
     // Extraire la durée (runtime pour films, episode_run_time pour séries)
     let duration = item.runtime;
     if (duration === undefined) duration = item.episode_runtime;
+    if (duration === 0) duration = "N/A";
+    else {
+        let hours = Math.trunc(duration / 60);
+        duration = hours + "h" + (duration - hours * 60);
+    }
     
     // Choisir l'emoji selon le type (🎬 pour films, 📺 pour séries)
     let badge = itemType === "movie" ? "🎬" : "📺";
@@ -279,14 +284,14 @@ function afficherDetailsItemTMDB(item, credits, itemType, itemId) {
     
     // Créer la note avec couleur selon la valeur (getNoteColor)
     let noteDv = document.createElement("div");
-        if (note > 0) {
-            noteDv.textContent = "⭐ " + note;
-            noteDv.className = "card-note rounded m-0 card-note-" + getNoteColor(note);
-        }
-        else {
-            noteDv.textContent = "⭐ N/A";
-            noteDv.className = "card-note rounded m-0";
-        }
+    if (note > 0) {
+        noteDv.textContent = "⭐ " + note;
+        noteDv.className = "card-note rounded m-0 card-note-" + getNoteColor(note);
+    }
+    else {
+        noteDv.textContent = "⭐ N/A";
+        noteDv.className = "card-note rounded m-0";
+    }
     metaDv.appendChild(noteDv);
     
     // Extraire l'année de la date de sortie
