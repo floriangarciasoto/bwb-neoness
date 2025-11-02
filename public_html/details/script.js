@@ -323,6 +323,8 @@ function afficherDetailsItemTMDB(item, credits, itemType, itemId) {
     // Créer l'élément img avec le poster
     let posterImg = document.createElement("img");
         posterImg.src = poster;
+        posterImg.alt = "Affiche pour " + title;
+        posterImg.title = title;
     
     // Créer le conteneur des boutons d'action
     let posterCTAs = document.createElement("div");
@@ -475,7 +477,7 @@ async function rechercherBandeAnnonce(itemId, itemType) {
     
         // Parser la réponse JSON
         data = await response.json();
-        console.log(data);
+        console.log("rechercherBandeAnnonce:",data);
     
         // Vérifier si des résultats existent
         let videoFound = false;
