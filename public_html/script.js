@@ -661,12 +661,15 @@ function creerCarteTMDB(item, type) {
     // Construire l'URL de la page de détails selon le type (film ou série)
     // Ouvrir l'URL dans la même fenêtre
     card.onclick = function() {
-        // Construction de l'URL vers la page de détails
-        const DETAILS_URL = `details/?id=${item.id}&type=${type}`;
-        
-        // Redirection de l'utilisateur vers la page de détails,
-        // remplace l'URL donc n'ouvre pas une nouvelle page
-        window.location.href = DETAILS_URL;
+        card.classList.add("spin");
+        setTimeout(()=>{
+            // Construction de l'URL vers la page de détails
+            const DETAILS_URL = `details/?id=${item.id}&type=${type}`;
+            
+            // Redirection de l'utilisateur vers la page de détails,
+            // remplace l'URL donc n'ouvre pas une nouvelle page
+            window.location.href = DETAILS_URL;
+        },1000);
     }
     
     // Retourner la carte complète
