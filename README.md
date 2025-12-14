@@ -1,2 +1,2 @@
-# bwb-neoness
+# Neoness
 Développement d'une application sportive dans le cadre de ma formation Beweb
